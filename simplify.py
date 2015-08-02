@@ -31,16 +31,85 @@ for line in f.readlines():
         dst = names[m.group(2)]
         arrows[(src, dst)] += 1
 
+back = ["send_transdata",
+        "frame_datalink_encode",
+        "commsecEncodeState",
+        "controllableVehicleProducerInput",
+        "fragment_reassembly",
+        "controllableVehicleProducerOutput"]
+
 print '''
 digraph main {
+  newrank=true;
   node [shape=box];
-  {
-    { rank=min; GCS [style=filled]; uart; }
-    { rank=max; Pixhawk [style=filled]; can_node; }
+  { rank=source; GCS [style=filled]; }
+  { rank=sink; Pixhawk [style=filled]; }
+  subgraph {
+    subgraph cluster_init {
+      color = blue;
+      label = "Init";
+      style = rounded;
+      thread_init;
+      commsecEncodeStaticKey;
+      commsecDecodeStaticKey;
+    }
+    subgraph cluster_gcs_in {
+      color = blue;
+      label = "GCS in";
+      style = rounded;
+      thread_period_5ms;
+      frame_datalink_decode;
+      frameBuffer;
+      commsecDecodeState;
+      controllableVehicleConsumerOutput;
+      commsecDecodeStaticKey;
+    }
+    subgraph cluster_pixhawk_out {
+      color = blue;
+      label = "Pixhawk out";
+      style = rounded;
+      controllableVehicleConsumerInput;
+      fragment_drop;
+      fragment_0x200;
+    }
+    subgraph cluster_pixhawk_in {
+      color = blue;
+      label = "Pixhawk in";
+      style = rounded;
+      fragment_reassembly;
+      controllableVehicleProducerOutput;
+    }  
+    subgraph cluster_gcs_out {
+      color = blue;
+      label = "GCS out";
+      style = rounded;
+      controllableVehicleProducerInput;
+      commsecEncodeState;
+      frame_datalink_encode;
+      send_transdata;
+      commsecEncodeStaticKey;
+    }  
+    subgraph cluster_camera {
+      color = blue;
+      label = "Camera";
+      style = rounded;
+      periodic_camera_injector;
+      camera_vm;
+      thread_period_1000ms;
+    }
   }
-  GCS -> uart -> GCS;
-  Pixhawk -> can_node -> Pixhawk;
+  { rank=same; send_transdata; frame_datalink_decode; }
+  { rank=same; fragment_0x200; fragment_reassembly; }
+  { rank=same; controllableVehicleProducerOutput; controllableVehicleConsumerInput; }
+  GCS -> uart;
+  GCS -> uart [dir=back];
+  can_node -> Pixhawk;
+  can_node -> Pixhawk [dir=back];
+  uart -> frameBuffer [style=invis];
 '''
 for (src, dst) in arrows:
-    print "  %s -> %s;" % (src, dst)
+    if src in back:
+        print "  %s -> %s [dir=back];" % (dst, src)
+    else:
+        print "  %s -> %s;" % (src, dst)
 print "}"
