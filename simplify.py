@@ -95,18 +95,19 @@ digraph main {
       style = rounded;
       periodic_camera_injector;
       camera_vm;
-      thread_period_1000ms;
     }
   }
   { rank=same; send_transdata; frame_datalink_decode; }
+  { rank=same; controllableVehicleConsumerInput; controllableVehicleProducerOutput; }
   { rank=same; fragment_0x200; fragment_reassembly; }
-  { rank=same; controllableVehicleProducerOutput; controllableVehicleConsumerInput; }
-  { rank=same; thread_period_1000ms; commsecDecodeState; commsecEncodeState; }
+  { rank=same; controllableVehicleConsumerOutput; controllableVehicleProducerInput; periodic_camera_injector; }
   GCS -> uart;
   GCS -> uart [dir=back];
   can_node -> Pixhawk;
   can_node -> Pixhawk [dir=back];
   uart -> frameBuffer [style=invis];
+  commsecDecodeStaticKey -> camera_vm [style=invis];
+  commsecEncodeStaticKey -> camera_vm [style=invis];
 '''
 for (src, dst) in arrows:
     if src in back:
