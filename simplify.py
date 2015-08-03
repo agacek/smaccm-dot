@@ -101,6 +101,7 @@ digraph main {
   { rank=same; send_transdata; frame_datalink_decode; }
   { rank=same; fragment_0x200; fragment_reassembly; }
   { rank=same; controllableVehicleProducerOutput; controllableVehicleConsumerInput; }
+  { rank=same; thread_period_1000ms; commsecDecodeState; commsecEncodeState; }
   GCS -> uart;
   GCS -> uart [dir=back];
   can_node -> Pixhawk;
